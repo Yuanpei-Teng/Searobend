@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            height: 100vh;
+        }
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+        #info {
+            width: 30%;
+            height: 100%;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #f0f0f0;
+            border-left: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div id="map">
+        {{ fmap|safe }}
+    </div>
+    <div id="info">
+        <h2>Pin Information</h2>
+        <div id="details">
+            Click on a pin to see details.
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([51.5074, -0.1278], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // 添加标记点击事件
+        function onMarkerClick(e) {
+            fetch(`/get_info?lat=${e.latlng.lat}&lng=${e.latlng.lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('details').innerHTML = `
+                        <h3>${data.placename}</h3>
+                        <p>Latitude: ${data.lat}</p>
+                        <p>Longitude: ${data.lng}</p>
+                    `;
+                });
+        }
+
+        // 从服务器加载地图和标记
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var fmap_html = `{{ fmap|safe }}`;
+            var fmap_div = document.createElement('div');
+            fmap_div.innerHTML = fmap_html;
+            document.getElementById('map').appendChild(fmap_div);
+
+            // 解析并添加标记
+            var fmap = document.getElementsByClassName('leaflet-marker-icon');
+            for (var i = 0; i < fmap.length; i++) {
+                var lat = parseFloat(fmap[i].getAttribute('data-lat'));
+                var lng = parseFloat(fmap[i].getAttribute('data-lng'));
+                var marker = L.marker([lat, lng]).addTo(map);
+                marker.on('click', onMarkerClick);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+        #popup-content {
+            width: 30%;
+            height: 100%;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #f0f0f0;
+            border-left: 1px solid #ccc;
+            z-index: 500;
+            position: relative;
+        }
+
+       {##slider-container {#}
+        {#    margin-top: 20px;#}
+        {#'}'#}
+
+        {##year-inputs {#}
+        {#    display: flex;#}
+        {#    justify-content: space-between;#}
+        {#    margin-top: 10px;#}
+        {#'}'#}
+        {##year-inputs input {#}
+        {#    width: 45%;#}
+        {#    padding: 5px;#}
+        {#    border: 1px solid #ccc;#}
+        {#    border-radius: 5px;#}
+        {#'}'#}
+
+        #apply-year-range, .view-more-button,.tagfilterbutton{
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: 'Arial', sans-serif;
+        }
+        #apply-year-range:hover,.view-more-button:hover ,.tagfilterbutton:hover{
+            background-color: #45a049;
+        }
+
+        #category-message {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e7f3fe;
+            border-left: 6px solid #2196F3;
+            color: #2196F3;
+            font-size: 16px;
+            display: none;
+        }
+
+        .ui-slider-range {
+            background: #4CAF50;
+        }
+        .ui-slider-handle {
+            border-color: #4CAF50;
+            background: white;
+        }
+
+        {#'#city-select {#}
+        {#    width: 100%;#}
+        {#    padding: 10px;#}
+        {#    margin-top: 10px;#}
+        {#    font-size: 16px;#}
+        {#'}'#}
+        /* Container styling */
+        #city-select-container {
+            margin: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+        }
+
+        /* Label styling */
+        #city-select-container label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        /* Select box styling */
+        #city-select-container select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: border-color 0.3s ease;
+        }
+
+        /* Hover and focus effects */
+        #city-select-container select:hover,
+        #city-select-container select:focus {
+            border-color: #007BFF;
+            outline: none;
+        }
+
+        /* Option styling */
+        #city-select-container select option {
+            padding: 10px;
+            background-color: #fff;
+            color: #333;
+        }
+
+        /* Placeholder option styling */
+        #city-select-container select option[value=""] {
+            color: #999;
+        }
+
+        #more-info-dialog {
+            display: none;
+            z-index: 10001 !important;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+                #dialog-slider-container {
+            margin-bottom: 20px;
+        }
+
+        #dialog-year-inputs {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        #dialog-year-inputs input {
+            width: 45%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #dialog-year-range {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="map">{{ fmap|safe }}</div>
+    <div id="popup-content">
+        <h2>Pin Information</h2>
+        <div id="details">
+            Click on a pin to see details.
+        </div>
+{#        <div id="slider-container">#}
+{#            <label for="year-range">Year range:</label>#}
+{#            <input type="text" id="year-range" readonly style="border:0; color:#f6931f; font-weight:bold;">#}
+{#            <div id="slider-range"></div>#}
+{#            <div id="year-inputs">#}
+{#                <input type="number" id="min-year" placeholder="Min year">#}
+{#                <input type="number" id="max-year" placeholder="Max year">#}
+{#            </div>#}
+{#            <button id="apply-year-range">Apply</button>#}
+{#        </div>#}
+
+        <div id="city-select-container">
+            <label for="city-select">Select a city:</label>
+            <select id="city-select">
+                <option value="">--Select a city--</option>
+                {% for city in cities %}
+                    {% if city in city_coords %}
+                        <option value="{{ city_coords[city] }}">{{ city }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+
+        <div id="tag-filter-container">
+            <label for="tag-filter">Filter by Map Type:</label>
+            <button class="tagfilterbutton" id="filter-production">Production</button>
+            <button class="tagfilterbutton" id="filter-creation">Creation</button>
+            <button class="tagfilterbutton" id="filter-provenance">Provenance</button>
+        </div>
+        <div id="category-message"></div>
+        <button id="view-more-button" style="display: none;">View More</button>
+    </div>
+
+    <div id="more-info-dialog" title="More Information">
+        <div id="more-info-content">
+            <p>Slide time-slider or input specific date to filter the data .</p>
+            <div id="dialog-slider-container">
+                <label for="dialog-year-range">Year range:</label>
+                <input type="text" id="dialog-year-range" readonly style="border:0; color:#f6931f; font-weight:bold;">
+                <div id="dialog-slider-range"></div>
+                <div id="dialog-year-inputs">
+                    <input type="number" id="dialog-min-year" placeholder="Min year">
+                    <input type="number" id="dialog-max-year" placeholder="Max year">
+                </div>
+            </div>
+            <div id="dialog-table-container">
+                <!-- Table content will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+
+            var map = L.map('map').setView([51.5074, -0.1278], 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            }).addTo(map);
+
+            var markers = {{ markers | tojson }};
+
+            var countryClusterGroup = L.markerClusterGroup();
+            var countyClusterGroup = L.markerClusterGroup();
+            var cityClusterGroup = L.markerClusterGroup();
+            var otherClusterGroup = L.markerClusterGroup();
+
+            markers.forEach(function(marker) {
+                var iconSize = 30;
+                var m = L.marker([marker.lat, marker.long], {
+                    icon: L.icon({
+                        iconUrl: 'static/icon/blue-pin2.png',
+                        iconSize: iconSize,
+                        iconAnchor: [iconSize / 2, iconSize],  // 调整图标锚点以使图标底部对齐
+                        popupAnchor: [0, -iconSize]
+                    })
+                });
+
+                m.bindPopup(marker.placename);
+                m.on('popupopen', function(e) {
+                    $('#details').html(`
+                        <h3>${marker.placename}</h3>
+                        <p>Place: <a href="${marker.place}" target="_blank">${marker.place}</a></p>
+                        <p>Latitude: ${e.target.getLatLng().lat}</p>
+                        <p>Longitude: ${e.target.getLatLng().lng}</p>
+                        <button class="view-more-button" onclick="openMoreInfoDialog('${marker.placename}', '${currentCategory}')">View More</button>
+                    `);
+                });
+                m.on('popupclose', function(e) {
+                    $('#details').html('Click on a pin to see details.');
+                    $('.view-more-button').hide();
+                });
+
+                if (marker.category === 'City/Towns') {
+                    cityClusterGroup.addLayer(m);
+                } else if (marker.category === 'County') {
+                    countyClusterGroup.addLayer(m);
+                } else if (marker.category === 'Country') {
+                    countryClusterGroup.addLayer(m);
+                } else {
+                    otherClusterGroup.addLayer(m);
+                }
+            });
+
+            map.addLayer(countryClusterGroup);
+            map.addLayer(countyClusterGroup);
+            map.addLayer(cityClusterGroup);
+            map.addLayer(otherClusterGroup);
+
+            var baseLayers = {
+                "Country": countryClusterGroup,
+                "County": countyClusterGroup,
+                "City/Towns": cityClusterGroup,
+                "Sites": otherClusterGroup
+            };
+
+            var layersControl = L.control.layers(null, baseLayers).addTo(map);
+
+            function updateMarkerIcons(iconUrl) {
+                [countryClusterGroup, countyClusterGroup, cityClusterGroup, otherClusterGroup].forEach(function(clusterGroup) {
+                    clusterGroup.eachLayer(function(layer) {
+                        layer.setIcon(L.icon({
+                            iconUrl: iconUrl,
+                            iconSize: 30,
+                            iconAnchor: [15, 30],
+                            popupAnchor: [0, -30]
+                        }));
+                    });
+                });
+            }
+
+// 原始map6的代码部分
+            {#var countryGroup = L.layerGroup().addTo(map);#}
+            {#var countyGroup = L.layerGroup().addTo(map);#}
+            {#var cityGroup = L.layerGroup().addTo(map);#}
+            {#var otherGroup = L.layerGroup().addTo(map);#}
+            {#var currentCategory = ''; // Store the current selected category#}
+            {##}
+            {#// 渲染后端传递过来的标记#}
+            {#var markers = {{ markers | tojson }};#}
+            {#//var minYear = {{ min_year }};#}
+            {#//var maxYear = {{ max_year }};#}
+            {#var markerObjects = [];#}
+            {#var layersControl = L.control.layers().addTo(map);#}
+            {##}
+            {##}
+            {#function addMarkers(data) {#}
+            {#    countryGroup.clearLayers();#}
+            {#    countyGroup.clearLayers();#}
+            {#    cityGroup.clearLayers();#}
+            {#    otherGroup.clearLayers();#}
+            {#    layersControl.remove();#}
+            {##}
+            {##}
+            {#    data.markers.forEach(function(marker) {#}
+            {#        //var iconSize = [20 + Math.sqrt(marker.manuscript_count) * 2, 20 + Math.sqrt(marker.manuscript_count) * 2];#}
+            {#        var iconSize = 30#}
+            {#        var m = L.marker([marker.lat, marker.long], {#}
+            {#            icon: L.icon({#}
+            {#                iconUrl: 'static/icon/blue-pin2.png',#}
+            {#                iconSize: iconSize,#}
+            {#                iconAnchor: [iconSize / 2, iconSize],  // 调整图标锚点以使图标底部对齐#}
+            {#                popupAnchor: [0, -iconSize]#}
+            {#            })#}
+            {#        });#}
+            {#        m.bindPopup(marker.placename);#}
+            {#        m.on('popupopen', function(e) {#}
+            {#            $('#details').html(`#}
+            {#                <h3>${marker.placename}</h3>#}
+            {#                <p>Place: <a href="${marker.place}" target="_blank">${marker.place}</a></p>#}
+                            {#<p>Begin Year: ${marker.begin_year}</p>#}
+                            {#<p>End Year: ${marker.end_year}</p>#}
+                            {#<p>Manuscripts: ${marker.manuscript_count}</p>#}
+            {#                <p>Latitude: ${e.target.getLatLng().lat}</p>#}
+            {#                <p>Longitude: ${e.target.getLatLng().lng}</p>#}
+            {#                <button class="view-more-button" onclick="openMoreInfoDialog('${marker.placename}','${currentCategory}')">View More</button>#}
+            {#            `);#}
+            {#        });#}
+            {##}
+            {##}
+            {##}
+            {#        m.on('popupclose', function(e) {#}
+            {#            $('#details').html('Click on a pin to see details.');#}
+            {#            $('.view-more-button').hide();#}
+            {#        });#}
+            {##}
+            {#        if (marker.category === 'City/Towns') {#}
+            {#            m.addTo(cityGroup);#}
+            {##}
+            {#        }#}
+            {#        else if(marker.category === 'County'){#}
+            {#            m.addTo(countyGroup);#}
+            {##}
+            {#        }#}
+            {#        else if(marker.category === 'Country'){#}
+            {#            m.addTo(countryGroup);#}
+            {##}
+            {#        }else{#}
+            {#            m.addTo(otherGroup);#}
+            {##}
+            {#        }#}
+            {##}
+            {#        markerObjects.push({marker: m, year: marker.year});#}
+            {#    });#}
+            {##}
+            {#    layersControl = L.control.layers(null, {#}
+            {#        "Country": countryGroup,#}
+            {#        "County": countyGroup,#}
+            {#        "City/Towns": cityGroup,#}
+            {#        "Sites": otherGroup#}
+            {#    }).addTo(map);#}
+            {##}
+            {#/}#}
+            {##}
+            {#layersControl.remove();#}
+            {#markers.forEach(function(marker) {#}
+            {#    //var iconSize = [20 + Math.sqrt(marker.manuscript_count) * 2, 20 + Math.sqrt(marker.manuscript_count) * 2];#}
+            {#    var iconSize = 30#}
+            {#    var m = L.marker([marker.lat, marker.long], {#}
+            {#        icon: L.icon({#}
+            {#            iconUrl: 'static/icon/blue-pin2.png',#}
+            {#            iconSize: iconSize,#}
+            {#            iconAnchor: [iconSize / 2, iconSize],  // 调整图标锚点以使图标底部对齐#}
+            {#            popupAnchor: [0, -iconSize]#}
+            {#        })#}
+            {#    });#}
+            {#    m.bindPopup(marker.placename);#}
+            {#    m.on('popupopen', function(e) {#}
+            {#        $('#details').html(`#}
+            {#            <h3>${marker.placename}</h3>#}
+            {#            <p>Place: <a href="${marker.place}" target="_blank">${marker.place}</a></p>#}
+                        {#<p>Begin Year: ${marker.begin_year}</p>#}
+                        {#<p>End Year: ${marker.end_year}</p>#}
+                        {#<p>Manuscripts: ${marker.manuscript_count}</p>#}
+            {#            <p>Latitude: ${e.target.getLatLng().lat}</p>#}
+            {#            <p>Longitude: ${e.target.getLatLng().lng}</p>#}
+            {#            <button class="view-more-button" onclick="openMoreInfoDialog('${marker.placename}','${currentCategory}')">View More</button>#}
+            {#        `);#}
+            {#    });#}
+            {##}
+            {#    m.on('popupclose', function(e) {#}
+            {#        $('#details').html('Click on a pin to see details.');#}
+            {#        $('.view-more-button').hide();#}
+            {#    });#}
+            {#    if (marker.category === 'City/Towns') {#}
+            {#        m.addTo(cityGroup);#}
+            {##}
+            {#    }#}
+            {#    else if(marker.category === 'County'){#}
+            {#        m.addTo(countyGroup);#}
+            {##}
+            {#    }#}
+            {#    else if(marker.category === 'Country'){#}
+            {#        m.addTo(countryGroup);#}
+            {##}
+            {#    }else{#}
+            {#        m.addTo(otherGroup);#}
+            {##}
+            {#    }#}
+            {#    // 将标记添加到MarkerClusterGroup而不是map#}
+            {#    //markerClusterGroup.addLayer(m);#}
+            {#    markerObjects.push({marker: m, year: marker.year});#}
+            {#/});#}
+            {##}
+            {##}
+            {#function updateMarkerIcons(iconUrl) {#}
+            {#    var iconSize = 30#}
+            {#    markerObjects.forEach(function(obj) {#}
+            {#        obj.marker.setIcon(L.icon({#}
+            {#            iconUrl: iconUrl,#}
+            {#            iconSize: iconSize,#}
+            {#            iconAnchor: [iconSize / 2, iconSize],  // 调整图标锚点以使图标底部对齐#}
+            {#            popupAnchor: [0, -iconSize]#}
+            {#        }));#}
+            {#    });#}
+            {#/}#}
+
+            function showCategoryMessage(buttonId) {
+                var categoryMessage = $('#category-message');
+                var mapType;
+                if (buttonId === 'filter-production') {
+                    mapType = 'Production';
+                    currentCategory = 'production';
+                } else if (buttonId === 'filter-creation') {
+                    mapType = 'Creation';
+                    currentCategory = 'creation';
+                } else if (buttonId === 'filter-provenance') {
+                    mapType = 'Provenance';
+                    currentCategory = 'provenance';
+                }
+                categoryMessage.text('You have selected the ' + mapType + ' Map.');
+                categoryMessage.show();
+            }
+
+            $("#filter-production").click(function() {
+                updateMarkerIcons('static/icon/blue-pin2.png');
+                showCategoryMessage(this.id);
+            });
+
+            $("#filter-creation").click(function() {
+                updateMarkerIcons('static/icon/green-pin2.png');
+                showCategoryMessage(this.id);
+            });
+
+            $("#filter-provenance").click(function() {
+                updateMarkerIcons('static/icon/red-pin2.png');
+                showCategoryMessage(this.id);
+            });
+
+
+            // 渲染后端传递过来的GeoJSON数据
+            var geojsonData = {{ geojson_data | safe }}
+            console.log("JSON Data:", geojsonData);
+
+            geojsonData.forEach(function(item) {
+                var data = item.data;
+                var color = item.color;
+
+                L.geoJson(data, {
+                    style: function(feature) {
+                        return {
+                            fillColor: color || '#'+ md5(feature.properties.name).toString().substring(0, 6), // 使用generate_color_from_string的结果
+                            color: 'green',
+                            weight: 1
+                        };
+                    }
+                }).addTo(map);
+            });
+
+           {#function filterMarkers(minYear, maxYear) {#}
+            {#    markerObjects.forEach(function(obj) {#}
+            {#        if ((obj.begin_year <= maxYear && obj.end_year >= minYear)) {#}
+            {#            obj.marker.addTo(map);#}
+            {#        } else {#}
+            {#            map.removeLayer(obj.marker);#}
+            {#        }#}
+            {#    });#}
+            {#'}'#}
+            {##}
+            {##}
+            {#$("#slider-range").slider({#}
+            {#    range: true,#}
+            {#    min: minYear,#}
+            {#    max: maxYear,#}
+            {#    values: [minYear, maxYear],#}
+            {#    slide: function(event, ui) {#}
+            {#        $("#year-range").val(ui.values[0] + " - " + ui.values[1]);#}
+            {#        $("#min-year").val(ui.values[0]);#}
+            {#        $("#max-year").val(ui.values[1]);#}
+            {#    }#}
+            {#'});'#}
+            {##}
+            {#$("#year-range").val($("#slider-range").slider("values", 0) + " - " + $("#slider-range").slider("values", 1));#}
+            {#$("#min-year").val($("#slider-range").slider("values", 0));#}
+            {#$("#max-year").val($("#slider-range").slider("values", 1));#}
+            {##}
+            {#// 输入框改变时更新滑块#}
+            {#$("#min-year, #max-year").change(function() {#}
+            {#    var minYearInput = parseInt($("#min-year").val());#}
+            {#    var maxYearInput = parseInt($("#max-year").val());#}
+            {#    if (!isNaN(minYearInput) && !isNaN(maxYearInput) && minYearInput <= maxYearInput) {#}
+            {#        $("#slider-range").slider("values", [minYearInput, maxYearInput]);#}
+            {#        $("#year-range").val(minYearInput + " - " + maxYearInput);#}
+            {#    }#}
+            {#'});'#}
+            {##}
+            {##}
+            {#$("#apply-year-range").click(function() {#}
+            {#    var minYear = parseInt($("#slider-range").slider("values", 0));#}
+            {#    var maxYear = parseInt($("#slider-range").slider("values", 1));#}
+            {#    $.post('/filter', { min_year: minYear, max_year: maxYear }, function(data) {#}
+            {#        addMarkers(data);#}
+            {#    });#}
+            {#'});'#}
+
+            $("#city-select").change(function() {
+                var coords = $(this).val();
+                if (coords) {
+                    coords = coords.split(',');
+                    map.setView([parseFloat(coords[0]), parseFloat(coords[1])], 12);
+                }
+            });
+
+            var baseLayers = {
+                "Country": countryGroup,
+                "County": countyGroup,
+                "City/Towns": cityGroup,
+                "Sites": otherGroup
+            };
+
+            layersControl = L.control.layers(baseLayers).addTo(map);
+        });
+
+        // 引入 CryptoJS 库
+        function md5(string) {
+            return CryptoJS.MD5(string).toString();
+        }
+
+
+        {#function openMoreInfoDialog(placename,currentCategory) {#}
+        {#    $.post('/view_more', { placename: placename, category: currentCategory }, function(data) {#}
+        {#        var minYear = 600; // Set the minimum year to 0#}
+        {#        var maxYear = 1900; // Set the maximum year to 2100#}
+        {#        var defaultMinYear = Math.min.apply(Math, data.map(function(manuscript) {#}
+        {#            return parseInt(manuscript.beginYear, 10);#}
+        {#        }));#}
+        {#        var defaultMaxYear = Math.max.apply(Math, data.map(function(manuscript) {#}
+        {#            return parseInt(manuscript.endYear, 10);#}
+        {#        }));#}
+        {##}
+        {##}
+        {#        $("#dialog-slider-range").slider({#}
+        {#            range: true,#}
+        {#            min: minYear,#}
+        {#            max: maxYear,#}
+        {#            values: [minYear, maxYear],#}
+        {#            slide: function(event, ui) {#}
+        {#                $("#dialog-year-range").val(ui.values[0] + " - " + ui.values[1]);#}
+        {#                $("#dialog-min-year").val(ui.values[0]);#}
+        {#                $("#dialog-max-year").val(ui.values[1]);#}
+        {#                filterTable(ui.values[0], ui.values[1]);#}
+        {#            }#}
+        {#        });#}
+        {##}
+        {#        $("#dialog-year-range").val(minYear + " - " + maxYear);#}
+        {#        $("#dialog-min-year").val(minYear);#}
+        {#        $("#dialog-max-year").val(maxYear);#}
+        {##}
+        {#        $("#dialog-min-year, #dialog-max-year").change(function() {#}
+        {#            var minYearInput = parseInt($("#dialog-min-year").val());#}
+        {#            var maxYearInput = parseInt($("#dialog-max-year").val());#}
+        {#            if (!isNaN(minYearInput) && !isNaN(maxYearInput) && minYearInput <= maxYearInput) {#}
+        {#                $("#dialog-slider-range").slider("values", [minYearInput, maxYearInput]);#}
+        {#                $("#dialog-year-range").val(minYearInput + " - " + maxYearInput);#}
+        {#                filterTable(minYearInput, maxYearInput);#}
+        {#            }#}
+        {#        });#}
+        {##}
+        {#        var content = `#}
+        {#            <table>#}
+        {#                <thead>#}
+        {#                    <tr>#}
+        {#                        <th>Manuscript</th>#}
+        {#                        <th>Ker Number</th>#}
+        {#                        <th>Shelfmark</th>#}
+        {#                        <th>Begin Year</th>#}
+        {#                        <th>End Year</th>#}
+        {#                        <th>Place Name</th>#}
+        {#                    </tr>#}
+        {#                </thead>#}
+        {#                <tbody id="dialog-table-body">`;#}
+        {#        data.forEach(function(manuscript) {#}
+        {#            content += `#}
+        {#                <tr>#}
+        {#                    <td><a href="${manuscript.manuscript}" target="_blank">${manuscript.manuscript}</a></td>#}
+        {#                    <td>${manuscript.kerNumber}</td>#}
+        {#                    <td>${manuscript.shelfmark}</td>#}
+        {#                    <td>${manuscript.beginYear}</td>#}
+        {#                    <td>${manuscript.endYear}</td>#}
+        {#                    <td>${manuscript.placename}</td>#}
+        {#                </tr>`;#}
+        {#        });#}
+        {#        content += `#}
+        {#                </tbody>#}
+        {#            </table>`;#}
+        {#        $('#dialog-table-container').html(content);#}
+        {##}
+        {#        $("#more-info-dialog").dialog({#}
+        {#            modal: true,#}
+        {#            width: 600,#}
+        {#            height: 600,#}
+        {#            buttons: {#}
+        {#                Close: function () {#}
+        {#                    $(this).dialog("close");#}
+        {#                }#}
+        {#            },#}
+        {#            create: function (event, ui) {#}
+        {#                $(event.target).parent().css('z-index', 10001);#}
+        {#            }#}
+        {#        });#}
+        {##}
+        {#        function filterTable(minYear, maxYear) {#}
+        {#            $("#dialog-table-body tr").each(function() {#}
+        {#                var beginYear = parseInt($(this).find("td:nth-child(4)").text(), 10);#}
+        {#                var endYear = parseInt($(this).find("td:nth-child(5)").text(), 10);#}
+        {#                if (beginYear >= minYear && endYear <= maxYear) {#}
+        {#                    $(this).show();#}
+        {#                } else {#}
+        {#                    $(this).hide();#}
+        {#                }#}
+        {#            });#}
+        {#        }#}
+        {#    });#}
+        {#'}'#} //需要删掉‘ ’号
+        function openMoreInfoDialog(placename, currentCategory) {
+            $.post('/view_more', { placename: placename, category: currentCategory }, function(data) {
+            var minYear = 600;
+            var maxYear = 1900;
+            var defaultMinYear = Math.min.apply(Math, data.map(function(manuscript) {
+                return parseInt(manuscript.beginYear, 10);
+            }));
+            var defaultMaxYear = Math.max.apply(Math, data.map(function(manuscript) {
+                return parseInt(manuscript.endYear, 10);
+            }));
+
+            $("#dialog-slider-range").slider({
+                range: true,
+                min: minYear,
+                max: maxYear,
+                values: [minYear, maxYear],
+                slide: function(event, ui) {
+                    $("#dialog-year-range").val(ui.values[0] + " - " + ui.values[1]);
+                    $("#dialog-min-year").val(ui.values[0]);
+                    $("#dialog-max-year").val(ui.values[1]);
+                    filterTable(ui.values[0], ui.values[1]);
+                }
+            });
+
+            $("#dialog-year-range").val(minYear + " - " + maxYear);
+            $("#dialog-min-year").val(minYear);
+            $("#dialog-max-year").val(maxYear);
+
+            $("#dialog-min-year, #dialog-max-year").change(function() {
+                var minYearInput = parseInt($("#dialog-min-year").val());
+                var maxYearInput = parseInt($("#dialog-max-year").val());
+                if (!isNaN(minYearInput) && !isNaN(maxYearInput) && minYearInput <= maxYearInput) {
+                    $("#dialog-slider-range").slider("values", [minYearInput, maxYearInput]);
+                    $("#dialog-year-range").val(minYearInput + " - " + maxYearInput);
+                    filterTable(minYearInput, maxYearInput);
+                }
+            });
+
+            var tableHeaders = '';
+            var tableRows = '';
+            var beginYearIndex, endYearIndex;
+            if (currentCategory === 'production') {
+                tableHeaders = `
+                    <tr>
+                        <th>Manuscript</th>
+                        <th>Ker Number</th>
+                        <th>Shelfmark</th>
+                        <th>Event</th>
+                        <th>Begin Year</th>
+                        <th>End Year</th>
+                        <th>Place Name</th>
+                    </tr>`;
+                tableRows = data.map(function(manuscript) {
+                    return `
+                        <tr>
+                            <td><a href="${manuscript.manuscript}" target="_blank">${manuscript.manuscript}</a></td>
+                            <td>${manuscript.kerNumber}</td>
+                            <td>${manuscript.shelfmark}</td>
+                            <td><a href="${manuscript.event}" target="_blank">${manuscript.event}</a></td>
+                            <td>${manuscript.beginYear}</td>
+                            <td>${manuscript.endYear}</td>
+                            <td>${manuscript.placename}</td>
+                        </tr>`;
+                }).join('');
+                beginYearIndex = 5;
+                endYearIndex = 6;
+            } else if (currentCategory === 'creation') {
+                tableHeaders = `
+                    <tr>
+                        <th>Work</th>
+                        <th>Begin Year</th>
+                        <th>End Year</th>
+                        <th>Place Name</th>
+                    </tr>`;
+                tableRows = data.map(function(manuscript) {
+                    return `
+                        <tr>
+                            <td><a href="${manuscript.manuscript}" target="_blank">${manuscript.manuscript}</a></td>
+                            <td>${manuscript.author}</td>
+                            <td>${manuscript.creationDate}</td>
+                            <td>${manuscript.beginYear}</td>
+                            <td>${manuscript.endYear}</td>
+                        </tr>`;
+                }).join('');
+                beginYearIndex = 3;
+                endYearIndex = 4;
+            } else if (currentCategory === 'provenance') {
+                tableHeaders = `
+                    <tr>
+                        <th>Manuscript</th>
+                        <th>Ker Number</th>
+                        <th>Shelfmark</th>
+                        <th>Event</th>
+                        <th>Begin Year</th>
+                        <th>End Year</th>
+                        <th>Place Name</th>
+                    </tr>`;
+                tableRows = data.map(function(manuscript) {
+                    return `
+                        <tr>
+                            <td><a href="${manuscript.manuscript}" target="_blank">${manuscript.manuscript}</a></td>
+                            <td>${manuscript.kerNumber}</td>
+                            <td>${manuscript.shelfmark}</td>
+                            <td><a href="${manuscript.event}" target="_blank">${manuscript.event}</a></td>
+                            <td>${manuscript.beginYear}</td>
+                            <td>${manuscript.endYear}</td>
+                            <td>${manuscript.placename}</td>
+                        </tr>`;
+                }).join('');
+                beginYearIndex = 5;
+                endYearIndex = 6;
+            }
+
+            var content = `
+                <table>
+                    <thead>
+                        ${tableHeaders}
+                    </thead>
+                    <tbody id="dialog-table-body">
+                        ${tableRows}
+                    </tbody>
+                </table>`;
+
+            $('#dialog-table-container').html(content);
+
+            $("#more-info-dialog").dialog({
+                modal: true,
+                width: 600,
+                height: 600,
+                buttons: {
+                    Close: function () {
+                        $(this).dialog("close");
+                    }
+                },
+                create: function (event, ui) {
+                    $(event.target).parent().css('z-index', 10001);
+                }
+            });
+
+            function filterTable(minYear, maxYear) {
+                $("#dialog-table-body tr").each(function() {
+                    var beginYear = parseInt($(this).find("td:nth-child(" + beginYearIndex + ")").text(), 10);
+                    var endYear = parseInt($(this).find("td:nth-child(" + endYearIndex + ")").text(), 10);
+                    if (beginYear >= minYear && endYear <= maxYear) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            }
+        });
+    }
+
+    </script>
+</body>
+</html>

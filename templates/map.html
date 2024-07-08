@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Map Example</title>
+    <style>
+        /* 调整地图的大小 */
+        .folium-map {
+            width: 40%;  /* 地图的宽度，可以是像素或百分比 */
+            height: 600px;  /* 地图的高度，通常使用像素 */
+            margin: auto;  /* 让地图在页面中居中显示 */
+        }
+    </style>
+</head>
+<body>
+    <h1>Search City</h1>
+    <form action="/" method="post">
+        <input type="text" name="city" placeholder="input city name" required>
+        <button type="submit">Search</button>
+    </form>
+    {{ map_html|safe }}
+</body>
+</html>
