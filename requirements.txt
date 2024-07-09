@@ -1,0 +1,10 @@
+Flask==2.0.2
+Jinja2==3.0.3
+Werkzeug==2.0.2
+itsdangerous==2.0.1
+click==8.0.3
+MarkupSafe==2.0.1
+folium==0.12.1
+requests==2.26.0
+SPARQLWrapper==1.8.5
+geopy==2.2.0
