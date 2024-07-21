@@ -256,12 +256,13 @@
 
             m.bindPopup(marker.placename);
             m.on('popupopen', function(e) {
+                var placename = marker.placename.replace(/'/g, "\\'"); //格式转译
                 $('#details').html(`
                     <h3>${marker.placename}</h3>
                     <p>Place: <a href="${marker.place}" target="_blank">${marker.place}</a></p>
                     <p>Latitude: ${e.target.getLatLng().lat}</p>
                     <p>Longitude: ${e.target.getLatLng().lng}</p>
-                    <button class="view-more-button" onclick="openMoreInfoDialog('${marker.placename}', '${currentCategory}')">View More</button>
+                    <button class="view-more-button" onclick="openMoreInfoDialog('${placename}', '${currentCategory}')">View More</button>
                 `);
             });
             m.on('popupclose', function(e) {
@@ -460,6 +461,7 @@
                 tableHeaders = `
                     <tr>
                         <th>Work</th>
+                        <th>workIdentifier</th>
                         <th>Begin Year</th>
                         <th>End Year</th>
                         <th>Place Name</th>
@@ -468,10 +470,10 @@
                     return `
                         <tr>
                             <td><a href="${manuscript.manuscript}" target="_blank">${manuscript.manuscript}</a></td>
-                            <td>${manuscript.author}</td>
-                            <td>${manuscript.creationDate}</td>
+                            <td>${manuscript.kerNumber}</td>
                             <td>${manuscript.beginYear}</td>
                             <td>${manuscript.endYear}</td>
+                            <td>${manuscript.placename}</td>
                         </tr>`;
                 }).join('');
                 beginYearIndex = 3;
@@ -543,7 +545,7 @@
                     var beginYearNum = parseInt(beginYearText, 10);
                     var endYearNum = parseInt(endYearText, 10);
 
-                    if ((beginYearText == "N/A" || endYearText == "N/A") && showNA) {
+                    if ((beginYearText == "N/A" || endYearText == "N/A" || endYearText == "" || beginYearText == "") && showNA) {
                         $(this).show();
                     } else if (beginYearNum >= minYear && endYearNum <= maxYear) {
                         $(this).show();

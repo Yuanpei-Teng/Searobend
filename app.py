@@ -917,7 +917,88 @@ def query_provenance_manuscripts(placename):
 
 '''
 def query_creation_manuscripts(placename):
-    pass
+    query = """
+        PREFIX lrmoo: <http://iflastandards.info/ns/lrm/lrmoo/>
+        PREFIX searobend: <https://searobend.adaptcentre.ie/ontology#>
+        PREFIX cidoc: <http://www.cidoc-crm.org/cidoc-crm/>
+        PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+        PREFIX rr: <http://www.w3.org/ns/r2rml#>
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        
+        SELECT ?workIdentifier (SAMPLE(?work) AS ?work) (SAMPLE(?title) AS ?title) (SAMPLE(?event) AS ?event) (SAMPLE(?date) AS ?date) 
+               (SAMPLE(?beginOfTheBegin) AS ?beginOfTheBegin) (SAMPLE(?beginYear) AS ?beginYear) 
+               (SAMPLE(?endOfTheEnd) AS ?endOfTheEnd) (SAMPLE(?endYear) AS ?endYear) 
+               (SAMPLE(?place) AS ?place) (SAMPLE(?placename) AS ?placename) (SAMPLE(?longLat) AS ?longLat)
+        WHERE {
+          ?work a lrmoo:Work .
+          
+          OPTIONAL {
+            ?work cidoc:P1_is_identified_by ?workIdentifierURI .
+            ?workIdentifierURI rdfs:label ?workIdentifier .
+          }
+          
+          OPTIONAL {
+            ?work cidoc:P102_has_title ?titleURI .
+            ?titleURI rdfs:label ?title .
+          }
+        
+          ?work lrmoo:16i_was_created_by ?event .
+          ?event a lrmoo:F27_Work_Creation .
+          
+          ?event cidoc:P7_took_place_at ?creationPlace .
+          ?creationPlace owl:sameAs ?place .
+          ?place a cidoc:E53_Place .
+          ?place rdfs:label ?placename .
+          ?place geo:hasGeometry ?dimension .
+          ?dimension geo:asWKT ?longLat .
+          
+          OPTIONAL { 
+            ?event cidoc:P4_has_time-span ?date .
+            ?date cidoc:P2_has_type searobend:CommonEra .
+            ?date cidoc:P82a_begin_of_the_begin ?beginOfTheBegin .
+            ?date cidoc:P82b_end_of_the_end ?endOfTheEnd .
+          }
+          
+          BIND(
+            IF(STRLEN(?beginOfTheBegin) = 3, ?beginOfTheBegin,
+              IF(STRLEN(?beginOfTheBegin) = 4, ?beginOfTheBegin,
+                IF(STRLEN(?beginOfTheBegin) = 9, SUBSTR(?beginOfTheBegin, 1, 3),
+                  IF(STRLEN(?beginOfTheBegin) = 10, SUBSTR(?beginOfTheBegin, 1, 4), "")
+                )
+              )
+            ) AS ?beginYear
+          )
+          
+          BIND(
+            IF(STRLEN(?endOfTheEnd) = 3, ?endOfTheEnd,
+              IF(STRLEN(?endOfTheEnd) = 4, ?endOfTheEnd,
+                IF(STRLEN(?endOfTheEnd) = 9, SUBSTR(?endOfTheEnd, 1, 3),
+                  IF(STRLEN(?endOfTheEnd) = 10, SUBSTR(?endOfTheEnd, 1, 4), "")
+                )
+              )
+            ) AS ?endYear
+          )
+          
+          FILTER (str(?placename) = "%s")
+        }
+        GROUP BY ?workIdentifier
+        """ % placename
+
+    results, total_count = fetch_all_data(query)
+    manuscripts = []
+    for result in results:
+        manuscripts.append({
+            "manuscript": result.get("work", {}).get("value", "N/A"),
+            "kerNumber": result.get("workIdentifier", {}).get("value", "N/A"),
+            "event": result.get("event", {}).get("value", "N/A"),
+            "beginYear": result.get("beginYear", {}).get("value", "N/A"),
+            "endYear": result.get("endYear", {}).get("value", "N/A"),
+            "placename": result.get("placename", {}).get("value", "N/A")
+        })
+    return manuscripts, total_count
 
 
 '''
@@ -1048,19 +1129,6 @@ def index():
                            county_coords=county_coords, city_coords=city_coords,
                            cities=sorted_cities, geojson_data=json.dumps(geojson_data),
                            min_year=default_min_year, max_year=default_max_year)
-
-
-# @app.route('/filter', methods=['POST'])
-# def filter_data():
-#     min_year = int(request.form['min_year'])
-#     max_year = int(request.form['max_year'])
-#     fmap, markers, city_coords, geojson_data = create_map(min_year, max_year)
-#     return jsonify({
-#         'map_html': fmap._repr_html_(),
-#         'markers': markers,
-#         'city_coords': city_coords,
-#         'geojson_data': geojson_data
-#     })
 
 if __name__ == '__main__':
     app.run(debug=True)
