@@ -249,14 +249,14 @@
                 icon: L.icon({
                     iconUrl: 'static/icon/blue-pin2.png',
                     iconSize: iconSize,
-                    iconAnchor: [iconSize / 2, iconSize],  // 调整图标锚点以使图标底部对齐
+                    iconAnchor: [iconSize / 2, iconSize],  // Adjust the icon anchors to align the bottom of the icon
                     popupAnchor: [0, -iconSize]
                 })
             });
 
             m.bindPopup(marker.placename);
             m.on('popupopen', function(e) {
-                var placename = marker.placename.replace(/'/g, "\\'"); //格式转译
+                var placename = marker.placename.replace(/'/g, "\\'"); //format conversion
                 $('#details').html(`
                     <h3>${marker.placename}</h3>
                     <p>Place: <a href="${marker.place}" target="_blank">${marker.place}</a></p>
@@ -340,14 +340,14 @@
                 showCategoryMessage(this.id);
             });
 
-            // 在页面加载完成时，触发默认按钮的点击事件
+            // Trigger the default button click event when the page load is complete
             $("#filter-production").click();
-            // JavaScript代码使图层控制面板默认展开
+
 
             setTimeout(function() {
                 document.querySelector('.leaflet-control-layers-toggle').click();
             }, 1000);
-            // 渲染后端传递过来的GeoJSON数据
+            // Render the GeoJSON data passed from the backend
             var geojsonData = {{ geojson_data | safe }}
             console.log("JSON Data:", geojsonData);
 
@@ -377,7 +377,7 @@
 
         });
 
-        // 引入 CryptoJS 库
+        // Import the CryptoJS Library
         function md5(string) {
             return CryptoJS.MD5(string).toString();
         }
@@ -506,7 +506,7 @@
             }
 
             var content = `
-                <p class="total-count">Number: ${totalCount}</p>  <!-- 在表格上方显示总数 -->
+                <p class="total-count">Number: ${totalCount}</p>  <! -- Display totals at the top of the table -->
                 <table>
                     <thead>
                         ${tableHeaders}

@@ -68,7 +68,6 @@ def obtain_city_query():
     GROUP BY ?place ?placename ?longLat
 
     """
-    # sparql.setReturnFormat(JSON)
     results, _ = fetch_all_data(query)
     cities = []
     for result in results:
@@ -107,7 +106,6 @@ def obtain_country_query():
     GROUP BY ?place ?placename ?longLat
 
     """
-    # sparql.setReturnFormat(JSON)
     results, _ = fetch_all_data(query)
     countries = []
     for result in results:
@@ -201,7 +199,7 @@ sites = obtain_site_query()
 
 
 
-# 检查 placename 是否包含城市名字
+# Check if placename contains a city name
 def contains_city_name(placename):
     return placename in cities
 
@@ -214,7 +212,7 @@ def contains_county_name(placename):
     return placename in counties
 
 
-# SPARQL查询函数
+# SPARQL Query Functions used to query coordinates
 def query_coordinates():
     query = """
     PREFIX lrmoo: <http://iflastandards.info/ns/lrm/lrmoo/>
@@ -242,16 +240,16 @@ def query_coordinates():
     return results
 
 
-# 检查坐标范围的函数
+# Functions for checking coordinate ranges
 def is_valid_coordinate(lat, long):
     return -90 <= lat <= 90 and -180 <= long <= 180
 
 
 def generate_color_from_string(s):
-    # 使用哈希函数将字符串转换为颜色
+    # Converting strings to colours using hash functions
     hash_object = hashlib.md5(s.encode())
     hash_hex = hash_object.hexdigest()
-    color = f'#{hash_hex[:6]}'  # 取前6位作为颜色代码
+    color = f'#{hash_hex[:6]}'  # Take the first 6 digits as the colour code
     return color
 
 
@@ -415,7 +413,6 @@ def create_map():
 
     return fmap, markers, city_coords, county_coords, country_coords, geojson_data
 
-# 这是新的query
 def query_manuscripts(placename):
     query = """
     PREFIX lrmoo: <http://iflastandards.info/ns/lrm/lrmoo/>
@@ -698,7 +695,7 @@ def view_more():
 
 @app.route('/')
 def index():
-    # 默认年份范围，可以根据需求修改
+    # Default year range, can be modified as required
     default_min_year = 600
     default_max_year = 1900
     fmap, markers, city_coords, county_coords, country_coords, geojson_data = create_map()
